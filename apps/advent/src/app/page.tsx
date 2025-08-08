@@ -10,16 +10,18 @@ const geist = Geist({
 
 const page = () => {
   return (
-    <div><TextReveal
-      className={cn(
-        `bg-primary from-foreground to-primary via-rose-200 bg-clip-text text-6xl font-bold text-transparent dark:bg-gradient-to-b`,
-        geist.className,
-      )}
-      from="bottom"
-      split="letter"
-    >
-      Welcome to Mvpblocks!
-    </TextReveal></div>
+    <div className='flex w-screen h-screen justify-center'>
+      <TextReveal
+        className={cn(
+          `bg-primary from-foreground to-primary via-rose-200 bg-clip-text text-6xl font-bold text-transparent dark:bg-gradient-to-b`,
+          geist.className,
+        )}
+        from="bottom"
+        split="letter"
+      >
+        Welcome to Advent!
+      </TextReveal>
+    </div>
   )
 }
 
