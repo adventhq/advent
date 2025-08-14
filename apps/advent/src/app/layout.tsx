@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import localFont from "next/font/local";
+
+const arizoniaFlare = localFont({
+  src: '../../public/fonts/Arizonia/ABCArizonaFlare-Regular-Trial.woff2',
+  variable: '--font-arizonia-flare',
+});
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,8 +31,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${arizoniaFlare.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        Hello World!
         {children}
       </body>
     </html>
