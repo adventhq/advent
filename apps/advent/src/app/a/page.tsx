@@ -4,7 +4,6 @@ import React, { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 
 import aws1 from "@/assets/landingassets/aws1.png";
-import aws2 from "@/assets/landingassets/aws2.png";
 import oracle1 from "@/assets/landingassets/oracle1.png";
 import gcp1 from "@/assets/landingassets/gcp1.png";
 import azure1 from "@/assets/landingassets/azure1.png";
@@ -46,6 +45,7 @@ export default function BlackHolePage() {
         }
 
         function resize() {
+            if (!canvas) return;
             width = window.innerWidth;
             height = window.innerHeight;
             canvas.width = width;
@@ -154,7 +154,7 @@ export default function BlackHolePage() {
                 }
             }
 
-            draw() {
+            draw(ctx: CanvasRenderingContext2D) {
                 // Draw trail
                 this.trail.forEach((point, i) => {
                     ctx.save();
@@ -217,6 +217,7 @@ export default function BlackHolePage() {
 
         // Accretion disk simulation
         function drawBlackHole() {
+            if (!ctx) return;
             // Event horizon
             const gradient = ctx.createRadialGradient(
                 centerX,
@@ -255,6 +256,7 @@ export default function BlackHolePage() {
         }
 
         function animate() {
+            if (!ctx) return;
             ctx.clearRect(0, 0, width, height);
 
             // Draw starry background
@@ -269,7 +271,7 @@ export default function BlackHolePage() {
 
             particles.forEach((p) => {
                 p.update();
-                p.draw();
+                p.draw(ctx);
             });
 
             animationRef.current = requestAnimationFrame(animate);
