@@ -446,8 +446,12 @@
       function openModal() {
         isModalOpen = true;
         modal.classList.add("active");
-        searchInput.focus();
         displayResults(searchData);
+        // Focus input after a short delay to ensure modal is visible
+        setTimeout(() => {
+          searchInput.focus();
+          searchInput.select();
+        }, 100);
       }
 
       function closeModal() {
@@ -552,6 +556,14 @@
         items.forEach((item, index) => {
           item.classList.toggle("selected", index === selectedIndex);
         });
+
+        // Scroll selected item into view
+        if (items[selectedIndex]) {
+          items[selectedIndex].scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+          });
+        }
       }
 
       function selectItem(item) {
