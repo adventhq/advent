@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Search Modal</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: #1a1a1a;
+        color: #ffffff;
+        overflow: hidden;
+      }
+
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding-top: 10vh;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s ease-out;
+        z-index: 1000;
+      }
+
+      .modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .search-modal {
+        background: #2a2a2a;
+        border: 1px solid #3a3a3a;
+        border-radius: 12px;
+        width: 640px;
+        max-width: 90vw;
+        max-height: 70vh;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        transform: scale(0.95) translateY(-20px);
+        transition: all 0.2s ease-out;
+        overflow: hidden;
+      }
+
+      .modal-overlay.active .search-modal {
+        transform: scale(1) translateY(0);
+      }
+
+      .search-header {
+        padding: 20px 24px 0;
+      }
+
+      .search-input-container {
+        position: relative;
+      }
+
+      .search-icon {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #888;
+        width: 20px;
+        height: 20px;
+      }
+
+      .search-input {
+        width: 100%;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: #ffffff;
+        font-size: 24px;
+        font-weight: 500;
+        padding: 16px 16px 16px 48px;
+        border-bottom: 1px solid #3a3a3a;
+        caret-color: #007aff;
+      }
+
+      .search-input::placeholder {
+        color: #666;
+      }
+
+      .search-results {
+        padding: 0;
+        max-height: 400px;
+        overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      .search-results::-webkit-scrollbar {
+        display: none;
+      }
+
+      .search-category {
+        padding: 16px 24px 8px;
+        color: #888;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .search-item {
+        padding: 12px 24px;
+        cursor: pointer;
+        transition: background-color 0.1s ease;
+        border-left: 3px solid transparent;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .search-item:hover,
+      .search-item.selected {
+        background: #3a3a3a;
+        border-left-color: #007aff;
+      }
+
+      .search-item-icon {
+        width: 32px;
+        height: 32px;
+        background: #444;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .search-item-icon.app {
+        background: linear-gradient(135deg, #007aff, #0056cc);
+      }
+
+      .search-item-icon.file {
+        background: linear-gradient(135deg, #ff9500, #ff6b00);
+      }
+
+      .search-item-icon.bookmark {
+        background: linear-gradient(135deg, #34c759, #28a745);
+      }
+
+      .search-item-icon.command {
+        background: linear-gradient(135deg, #af52de, #8e44ad);
+      }
+
+      .search-item-content {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .search-item-title {
+        color: #ffffff;
+        font-size: 16px;
+        font-weight: 500;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .search-item-subtitle {
+        color: #888;
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .search-item-shortcut {
+        color: #666;
+        font-size: 12px;
+        background: #444;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-family: "SF Mono", Monaco, monospace;
+      }
+
+      .search-footer {
+        padding: 16px 24px;
+        border-top: 1px solid #3a3a3a;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #252525;
+      }
+
+      .footer-hint {
+        color: #666;
+        font-size: 13px;
+      }
+
+      .footer-shortcut {
+        background: #3a3a3a;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        color: #888;
+        font-family: "SF Mono", Monaco, monospace;
+      }
+
+      .no-results {
+        padding: 40px 24px;
+        text-align: center;
+        color: #666;
+        font-size: 16px;
+      }
+
+      .trigger-button {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #007aff;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+        font-family: inherit;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+        transition: all 0.2s ease;
+      }
+
+      .trigger-button:hover {
+        background: #0056cc;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(0, 122, 255, 0.4);
+      }
+
+      .demo-content {
+        padding: 40px;
+        text-align: center;
+        color: #888;
+      }
+
+      .demo-content h1 {
+        color: #fff;
+        margin-bottom: 20px;
+        font-size: 32px;
+      }
+
+      .demo-content p {
+        font-size: 18px;
+        line-height: 1.6;
+      }
+
+      .highlight {
+        background: rgba(255, 235, 59, 0.3);
+        color: #fff;
+        padding: 2px 4px;
+        border-radius: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="demo-content">
+      <h1>Search Modal Demo</h1>
+      <p>
+        Click the search button or press <strong>Cmd/Ctrl + K</strong> to open
+        the search modal
+      </p>
+    </div>
+
+    <button class="trigger-button" onclick="openModal()">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <circle cx="11" cy="11" r="8"></circle>
+        <polyline points="21,21 16.65,16.65"></polyline>
+      </svg>
+      Search
+    </button>
+
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="search-modal">
+        <div class="search-header">
+          <div class="search-input-container">
+            <svg
+              class="search-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="11" cy="11" r="8"></circle>
+              <polyline points="21,21 16.65,16.65"></polyline>
+            </svg>
+            <input
+              type="text"
+              class="search-input"
+              placeholder="Search for anything..."
+              id="searchInput"
+              autocomplete="off"
+            />
+          </div>
+        </div>
+
+        <div class="search-results" id="searchResults">
+          <!-- Results will be populated by JavaScript -->
+        </div>
+
+        <div class="search-footer">
+          <div class="footer-hint">
+            <span class="footer-shortcut">↵</span> to select
+            <span class="footer-shortcut">↑↓</span> to navigate
+            <span class="footer-shortcut">esc</span> to close
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Sample data for demonstration
+      const searchData = [
+        {
+          category: "Applications",
+          items: [
+            {
+              type: "app",
+              title: "Visual Studio Code",
+              subtitle: "Code Editor",
+              shortcut: "⌘+⇧+V",
+            },
+            {
+              type: "app",
+              title: "Figma",
+              subtitle: "Design Tool",
+              shortcut: "⌘+F",
+            },
+            {
+              type: "app",
+              title: "Slack",
+              subtitle: "Team Communication",
+              shortcut: "⌘+S",
+            },
+            {
+              type: "app",
+              title: "Chrome",
+              subtitle: "Web Browser",
+              shortcut: "⌘+C",
+            },
+          ],
+        },
+        {
+          category: "Files",
+          items: [
+            {
+              type: "file",
+              title: "Project Proposal.pdf",
+              subtitle: "~/Documents/Work/",
+              shortcut: "",
+            },
+            {
+              type: "file",
+              title: "README.md",
+              subtitle: "~/Code/my-project/",
+              shortcut: "",
+            },
+            {
+              type: "file",
+              title: "design-system.fig",
+              subtitle: "~/Design/Components/",
+              shortcut: "",
+            },
+          ],
+        },
+        {
+          category: "Bookmarks",
+          items: [
+            {
+              type: "bookmark",
+              title: "GitHub",
+              subtitle: "https://github.com",
+              shortcut: "",
+            },
+            {
+              type: "bookmark",
+              title: "Advent Store",
+              subtitle: "https://adventhq.com/store",
+              shortcut: "",
+            },
+            {
+              type: "bookmark",
+              title: "Claude AI",
+              subtitle: "https://claude.ai",
+              shortcut: "",
+            },
+          ],
+        },
+        {
+          category: "Commands",
+          items: [
+            {
+              type: "command",
+              title: "Create New File",
+              subtitle: "File Management",
+              shortcut: "⌘+N",
+            },
+            {
+              type: "command",
+              title: "Toggle Dark Mode",
+              subtitle: "System Preferences",
+              shortcut: "⌘+D",
+            },
+            {
+              type: "command",
+              title: "Take Screenshot",
+              subtitle: "Screenshot Tool",
+              shortcut: "⌘+⇧+3",
+            },
+          ],
+        },
+      ];
+
+      let selectedIndex = 0;
+      let filteredResults = [];
+      let isModalOpen = false;
+
+      const modal = document.getElementById("modalOverlay");
+      const searchInput = document.getElementById("searchInput");
+      const searchResults = document.getElementById("searchResults");
+
+      function openModal() {
+        isModalOpen = true;
+        modal.classList.add("active");
+        searchInput.focus();
+        displayResults(searchData);
+      }
+
+      function closeModal() {
+        isModalOpen = false;
+        modal.classList.remove("active");
+        searchInput.value = "";
+        selectedIndex = 0;
+      }
+
+      function displayResults(data) {
+        searchResults.innerHTML = "";
+        filteredResults = [];
+        let itemIndex = 0;
+
+        data.forEach((category) => {
+          if (category.items.length > 0) {
+            const categoryEl = document.createElement("div");
+            categoryEl.className = "search-category";
+            categoryEl.textContent = category.category;
+            searchResults.appendChild(categoryEl);
+
+            category.items.forEach((item) => {
+              const itemEl = document.createElement("div");
+              itemEl.className = "search-item";
+              if (itemIndex === selectedIndex) {
+                itemEl.classList.add("selected");
+              }
+
+              itemEl.innerHTML = `
+                            <div class="search-item-icon ${item.type}">
+                                ${getIconForType(item.type)}
+                            </div>
+                            <div class="search-item-content">
+                                <div class="search-item-title">${
+                                  item.title
+                                }</div>
+                                <div class="search-item-subtitle">${
+                                  item.subtitle
+                                }</div>
+                            </div>
+                            ${
+                              item.shortcut
+                                ? `<div class="search-item-shortcut">${item.shortcut}</div>`
+                                : ""
+                            }
+                        `;
+
+              itemEl.addEventListener("click", () => selectItem(item));
+              itemEl.addEventListener("mouseenter", () => {
+                selectedIndex = itemIndex;
+                updateSelection();
+              });
+
+              searchResults.appendChild(itemEl);
+              filteredResults.push(item);
+              itemIndex++;
+            });
+          }
+        });
+
+        if (filteredResults.length === 0) {
+          searchResults.innerHTML =
+            '<div class="no-results">No results found</div>';
+        }
+      }
+
+      function getIconForType(type) {
+        const icons = {
+          app: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>',
+          file: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>',
+          bookmark:
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>',
+          command:
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>',
+        };
+        return icons[type] || icons.command;
+      }
+
+      function filterResults(query) {
+        if (!query) {
+          displayResults(searchData);
+          return;
+        }
+
+        const filtered = searchData
+          .map((category) => ({
+            ...category,
+            items: category.items.filter(
+              (item) =>
+                item.title.toLowerCase().includes(query.toLowerCase()) ||
+                item.subtitle.toLowerCase().includes(query.toLowerCase())
+            ),
+          }))
+          .filter((category) => category.items.length > 0);
+
+        selectedIndex = 0;
+        displayResults(filtered);
+      }
+
+      function updateSelection() {
+        const items = document.querySelectorAll(".search-item");
+        items.forEach((item, index) => {
+          item.classList.toggle("selected", index === selectedIndex);
+        });
+      }
+
+      function selectItem(item) {
+        console.log("Selected:", item);
+        alert(
+          `You selected: ${item.title}\nType: ${item.type}\nSubtitle: ${item.subtitle}`
+        );
+        closeModal();
+      }
+
+      // Event listeners
+      searchInput.addEventListener("input", (e) => {
+        filterResults(e.target.value);
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if ((e.metaKey && e.key === "k") || (e.ctrlKey && e.key === "k")) {
+          e.preventDefault();
+          if (!isModalOpen) {
+            openModal();
+          }
+        }
+
+        if (!isModalOpen) return;
+
+        switch (e.key) {
+          case "Escape":
+            closeModal();
+            break;
+          case "ArrowDown":
+            e.preventDefault();
+            if (selectedIndex < filteredResults.length - 1) {
+              selectedIndex++;
+              updateSelection();
+            }
+            break;
+          case "ArrowUp":
+            e.preventDefault();
+            if (selectedIndex > 0) {
+              selectedIndex--;
+              updateSelection();
+            }
+            break;
+          case "Enter":
+            e.preventDefault();
+            if (filteredResults[selectedIndex]) {
+              selectItem(filteredResults[selectedIndex]);
+            }
+            break;
+        }
+      });
+
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          closeModal();
+        }
+      });
+
+      // Initialize with default results
+      displayResults(searchData);
+    </script>
+  </body>
+</html>
